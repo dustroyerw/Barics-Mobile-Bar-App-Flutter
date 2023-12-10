@@ -13,7 +13,7 @@ import 'package:flutter_barics_mobile_application/main.dart';
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MenuBarApp());
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

@@ -1,125 +1,245 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+/// Flutter code sample for [MenuBar].
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+void main() => runApp(const MenuBarApp());
 
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+/// A class for consolidating the definition of menu entries.
+///
+/// This sort of class is not required, but illustrates one way that defining
+/// menus could be done.
+class MenuEntry {
+  const MenuEntry(
+      {required this.label, this.shortcut, this.onPressed, this.menuChildren})
+      : assert(menuChildren == null || onPressed == null,
+            'onPressed is ignored if menuChildren are provided');
+  final String label;
+
+  final MenuSerializableShortcut? shortcut;
+  final VoidCallback? onPressed;
+  final List<MenuEntry>? menuChildren;
+
+  static List<Widget> build(List<MenuEntry> selections) {
+    Widget buildSelection(MenuEntry selection) {
+      if (selection.menuChildren != null) {
+        return SubmenuButton(
+          menuChildren: MenuEntry.build(selection.menuChildren!),
+          child: Text(selection.label),
+        );
+      }
+      return MenuItemButton(
+        shortcut: selection.shortcut,
+        onPressed: selection.onPressed,
+        child: Text(selection.label),
+      );
+    }
+
+    return selections.map<Widget>(buildSelection).toList();
+  }
+
+  static Map<MenuSerializableShortcut, Intent> shortcuts(
+      List<MenuEntry> selections) {
+    final Map<MenuSerializableShortcut, Intent> result =
+        <MenuSerializableShortcut, Intent>{};
+    for (final MenuEntry selection in selections) {
+      if (selection.menuChildren != null) {
+        result.addAll(MenuEntry.shortcuts(selection.menuChildren!));
+      } else {
+        if (selection.shortcut != null && selection.onPressed != null) {
+          result[selection.shortcut!] =
+              VoidCallbackIntent(selection.onPressed!);
+        }
+      }
+    }
+    return result;
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class MyMenuBar extends StatefulWidget {
+  const MyMenuBar({
+    super.key,
+    required this.message,
+  });
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  final String message;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MyMenuBar> createState() => _MyMenuBarState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _MyMenuBarState extends State<MyMenuBar> {
+  ShortcutRegistryEntry? _shortcutsEntry;
+  String? _lastSelection;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  Color get backgroundColor => _backgroundColor;
+  Color _backgroundColor = Colors.red;
+  set backgroundColor(Color value) {
+    if (_backgroundColor != value) {
+      setState(() {
+        _backgroundColor = value;
+      });
+    }
+  }
+
+  bool get showingMessage => _showMessage;
+  bool _showMessage = false;
+  set showingMessage(bool value) {
+    if (_showMessage != value) {
+      setState(() {
+        _showMessage = value;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _shortcutsEntry?.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      children: <Widget>[
+        Row(
+          mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            Expanded(
+              child: MenuBar(
+                children: MenuEntry.build(_getMenus()),
+              ),
             ),
           ],
         ),
+        Expanded(
+          child: Container(
+            alignment: Alignment.center,
+            color: backgroundColor,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Text(
+                    showingMessage ? widget.message : '',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                ),
+                Text(_lastSelection != null
+                    ? 'Last Selected: $_lastSelection'
+                    : ''),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<MenuEntry> _getMenus() {
+    final List<MenuEntry> result = <MenuEntry>[
+      MenuEntry(
+        label: 'Menu Demo',
+        menuChildren: <MenuEntry>[
+          MenuEntry(
+            label: 'About',
+            onPressed: () {
+              showAboutDialog(
+                context: context,
+                applicationName: 'MenuBar Sample',
+                applicationVersion: '1.0.0',
+              );
+              setState(() {
+                _lastSelection = 'About';
+              });
+            },
+          ),
+          MenuEntry(
+            label: showingMessage ? 'Hide Message' : 'Show Message',
+            onPressed: () {
+              setState(() {
+                _lastSelection =
+                    showingMessage ? 'Hide Message' : 'Show Message';
+                showingMessage = !showingMessage;
+              });
+            },
+            shortcut:
+                const SingleActivator(LogicalKeyboardKey.keyS, control: true),
+          ),
+          // Hides the message, but is only enabled if the message isn't
+          // already hidden.
+          MenuEntry(
+            label: 'Reset Message',
+            onPressed: showingMessage
+                ? () {
+                    setState(() {
+                      _lastSelection = 'Reset Message';
+                      showingMessage = false;
+                    });
+                  }
+                : null,
+            shortcut: const SingleActivator(LogicalKeyboardKey.escape),
+          ),
+          MenuEntry(
+            label: 'Background Color',
+            menuChildren: <MenuEntry>[
+              MenuEntry(
+                label: 'Red Background',
+                onPressed: () {
+                  setState(() {
+                    _lastSelection = 'Red Background';
+                    backgroundColor = Colors.red;
+                  });
+                },
+                shortcut: const SingleActivator(LogicalKeyboardKey.keyR,
+                    control: true),
+              ),
+              MenuEntry(
+                label: 'Green Background',
+                onPressed: () {
+                  setState(() {
+                    _lastSelection = 'Green Background';
+                    backgroundColor = Colors.green;
+                  });
+                },
+                shortcut: const SingleActivator(LogicalKeyboardKey.keyG,
+                    control: true),
+              ),
+              MenuEntry(
+                label: 'Blue Background',
+                onPressed: () {
+                  setState(() {
+                    _lastSelection = 'Blue Background';
+                    backgroundColor = Colors.blue;
+                  });
+                },
+                shortcut: const SingleActivator(LogicalKeyboardKey.keyB,
+                    control: true),
+              ),
+            ],
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    ];
+    // (Re-)register the shortcuts with the ShortcutRegistry so that they are
+    // available to the entire application, and update them if they've changed.
+    _shortcutsEntry?.dispose();
+    _shortcutsEntry =
+        ShortcutRegistry.of(context).addAll(MenuEntry.shortcuts(result));
+    return result;
+  }
+}
+
+class MenuBarApp extends StatelessWidget {
+  const MenuBarApp({super.key});
+
+  static const String kMessage = '"Talk less. Smile more." - A. Burr';
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: Scaffold(body: SafeArea(child: MyMenuBar(message: kMessage))),
     );
   }
 }
