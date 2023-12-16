@@ -1,245 +1,246 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'emailask.dart';
+import 'registrationpage.dart';
+import 'forgotpasswordpage.dart';
 
-/// Flutter code sample for [MenuBar].
-
-void main() => runApp(const MenuBarApp());
-
-/// A class for consolidating the definition of menu entries.
-///
-/// This sort of class is not required, but illustrates one way that defining
-/// menus could be done.
-class MenuEntry {
-  const MenuEntry(
-      {required this.label, this.shortcut, this.onPressed, this.menuChildren})
-      : assert(menuChildren == null || onPressed == null,
-            'onPressed is ignored if menuChildren are provided');
-  final String label;
-
-  final MenuSerializableShortcut? shortcut;
-  final VoidCallback? onPressed;
-  final List<MenuEntry>? menuChildren;
-
-  static List<Widget> build(List<MenuEntry> selections) {
-    Widget buildSelection(MenuEntry selection) {
-      if (selection.menuChildren != null) {
-        return SubmenuButton(
-          menuChildren: MenuEntry.build(selection.menuChildren!),
-          child: Text(selection.label),
-        );
-      }
-      return MenuItemButton(
-        shortcut: selection.shortcut,
-        onPressed: selection.onPressed,
-        child: Text(selection.label),
-      );
-    }
-
-    return selections.map<Widget>(buildSelection).toList();
-  }
-
-  static Map<MenuSerializableShortcut, Intent> shortcuts(
-      List<MenuEntry> selections) {
-    final Map<MenuSerializableShortcut, Intent> result =
-        <MenuSerializableShortcut, Intent>{};
-    for (final MenuEntry selection in selections) {
-      if (selection.menuChildren != null) {
-        result.addAll(MenuEntry.shortcuts(selection.menuChildren!));
-      } else {
-        if (selection.shortcut != null && selection.onPressed != null) {
-          result[selection.shortcut!] =
-              VoidCallbackIntent(selection.onPressed!);
-        }
-      }
-    }
-    return result;
-  }
+void main() {
+  runApp(MaterialApp(
+    theme: ThemeData(primaryColor: Colors.purple),
+    debugShowCheckedModeBanner: false,
+    home: LoginPage(),
+  ));
 }
 
-class MyMenuBar extends StatefulWidget {
-  const MyMenuBar({
-    super.key,
-    required this.message,
-  });
-
-  final String message;
-
+class LoginPage extends StatefulWidget {
   @override
-  State<MyMenuBar> createState() => _MyMenuBarState();
+  _LoginPageState createState() => _LoginPageState();
 }
 
-class _MyMenuBarState extends State<MyMenuBar> {
-  ShortcutRegistryEntry? _shortcutsEntry;
-  String? _lastSelection;
-
-  Color get backgroundColor => _backgroundColor;
-  Color _backgroundColor = Colors.red;
-  set backgroundColor(Color value) {
-    if (_backgroundColor != value) {
-      setState(() {
-        _backgroundColor = value;
-      });
-    }
-  }
-
-  bool get showingMessage => _showMessage;
-  bool _showMessage = false;
-  set showingMessage(bool value) {
-    if (_showMessage != value) {
-      setState(() {
-        _showMessage = value;
-      });
-    }
-  }
+class _LoginPageState extends State<LoginPage> {
+  TextEditingController _usernameController = TextEditingController();
+  TextEditingController _passwordController = TextEditingController();
+  bool _isLoginEnabled = false;
 
   @override
-  void dispose() {
-    _shortcutsEntry?.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+
+    _usernameController.addListener(_updateLoginState);
+    _passwordController.addListener(_updateLoginState);
+  }
+
+  void _updateLoginState() {
+    setState(() {
+      _isLoginEnabled = _usernameController.text.isNotEmpty &&
+          _passwordController.text.isNotEmpty;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Expanded(
-              child: MenuBar(
-                children: MenuEntry.build(_getMenus()),
-              ),
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Container(
+          height: MediaQuery.of(context).size.height,
+          width: MediaQuery.of(context).size.width,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/repeating.jpg'),
+              fit: BoxFit.cover,
             ),
-          ],
-        ),
-        Expanded(
-          child: Container(
-            alignment: Alignment.center,
-            color: backgroundColor,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Text(
-                    showingMessage ? widget.message : '',
-                    style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(height: 5),
+              Text(
+                '',
+                style: TextStyle(
+                  color: Color.fromARGB(255, 247, 202, 205),
+                  fontSize: 20,
+                ),
+              ),
+              SizedBox(height: 100),
+              Container(
+                height: 400,
+                width: 400,
+                decoration: BoxDecoration(
+                  color: Color.fromARGB(255, 99, 94, 95),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(height: 20),
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'BARIC',
+                              style: TextStyle(
+                                fontFamily: 'Schuyler',
+                                fontSize: 30.0,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange,
+                              ),
+                            ),
+                            TextSpan(
+                              text: "'",
+                              style: TextStyle(
+                                fontFamily: 'Schuyler',
+                                fontSize: 30.0,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            TextSpan(
+                              text: "S",
+                              style: TextStyle(
+                                fontFamily: 'Schuyler',
+                                fontSize: 30.0,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange,
+                              ),
+                            ),
+                            TextSpan(
+                              text: ' MOBILE BAR',
+                              style: TextStyle(
+                                fontFamily: 'Schuyler',
+                                fontSize: 30.0,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 30),
+                      Container(
+                        width: 350,
+                        child: TextField(
+                          controller: _usernameController,
+                          style: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            labelText: 'Username',
+                            labelStyle: TextStyle(color: Colors.white),
+                            suffixIcon: Icon(
+                              Icons.mail,
+                              size: 17,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      Container(
+                        width: 350,
+                        child: TextField(
+                          controller: _passwordController,
+                          obscureText: true,
+                          style: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            labelStyle: TextStyle(color: Colors.white),
+                            suffixIcon: Icon(
+                              Icons.remove_red_eye,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(10, 10, 10, 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ForgotPasswordPage(),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                'Forgot Password',
+                                style:
+                                    TextStyle(color: Colors.orangeAccent[700]),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: _isLoginEnabled ? _handleLogin : null,
+                            child: Container(
+                              alignment: Alignment.center,
+                              width: 250,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(50),
+                                color: Colors.orange,
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all(12.0),
+                                child: Text(
+                                  'Login',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => RegistrationPage(),
+                                ),
+                              );
+                            },
+                            child: Text(
+                              "Don't have an account? Register",
+                              style: TextStyle(
+                                color: Colors.orangeAccent[700],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 30),
+                    ],
                   ),
                 ),
-                Text(_lastSelection != null
-                    ? 'Last Selected: $_lastSelection'
-                    : ''),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  List<MenuEntry> _getMenus() {
-    final List<MenuEntry> result = <MenuEntry>[
-      MenuEntry(
-        label: 'Menu Demo',
-        menuChildren: <MenuEntry>[
-          MenuEntry(
-            label: 'About',
-            onPressed: () {
-              showAboutDialog(
-                context: context,
-                applicationName: 'MenuBar Sample',
-                applicationVersion: '1.0.0',
-              );
-              setState(() {
-                _lastSelection = 'About';
-              });
-            },
-          ),
-          MenuEntry(
-            label: showingMessage ? 'Hide Message' : 'Show Message',
-            onPressed: () {
-              setState(() {
-                _lastSelection =
-                    showingMessage ? 'Hide Message' : 'Show Message';
-                showingMessage = !showingMessage;
-              });
-            },
-            shortcut:
-                const SingleActivator(LogicalKeyboardKey.keyS, control: true),
-          ),
-          // Hides the message, but is only enabled if the message isn't
-          // already hidden.
-          MenuEntry(
-            label: 'Reset Message',
-            onPressed: showingMessage
-                ? () {
-                    setState(() {
-                      _lastSelection = 'Reset Message';
-                      showingMessage = false;
-                    });
-                  }
-                : null,
-            shortcut: const SingleActivator(LogicalKeyboardKey.escape),
-          ),
-          MenuEntry(
-            label: 'Background Color',
-            menuChildren: <MenuEntry>[
-              MenuEntry(
-                label: 'Red Background',
-                onPressed: () {
-                  setState(() {
-                    _lastSelection = 'Red Background';
-                    backgroundColor = Colors.red;
-                  });
-                },
-                shortcut: const SingleActivator(LogicalKeyboardKey.keyR,
-                    control: true),
-              ),
-              MenuEntry(
-                label: 'Green Background',
-                onPressed: () {
-                  setState(() {
-                    _lastSelection = 'Green Background';
-                    backgroundColor = Colors.green;
-                  });
-                },
-                shortcut: const SingleActivator(LogicalKeyboardKey.keyG,
-                    control: true),
-              ),
-              MenuEntry(
-                label: 'Blue Background',
-                onPressed: () {
-                  setState(() {
-                    _lastSelection = 'Blue Background';
-                    backgroundColor = Colors.blue;
-                  });
-                },
-                shortcut: const SingleActivator(LogicalKeyboardKey.keyB,
-                    control: true),
               ),
             ],
           ),
-        ],
+        ),
       ),
-    ];
-    // (Re-)register the shortcuts with the ShortcutRegistry so that they are
-    // available to the entire application, and update them if they've changed.
-    _shortcutsEntry?.dispose();
-    _shortcutsEntry =
-        ShortcutRegistry.of(context).addAll(MenuEntry.shortcuts(result));
-    return result;
+    );
   }
-}
 
-class MenuBarApp extends StatelessWidget {
-  const MenuBarApp({super.key});
-
-  static const String kMessage = '"Talk less. Smile more." - A. Burr';
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(body: SafeArea(child: MyMenuBar(message: kMessage))),
+  void _handleLogin() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => EmailAsk()),
     );
   }
 }
